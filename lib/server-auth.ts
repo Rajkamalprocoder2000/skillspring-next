@@ -12,7 +12,7 @@ export async function requireActionProfile(roles?: AppRole[]) {
     redirect("/auth/login");
   }
 
-  const profile = await getCurrentProfile(supabase);
+  const profile = await getCurrentProfile(supabase, user);
   if (!profile) {
     redirect("/auth/login");
   }
@@ -28,4 +28,3 @@ export async function requireActionProfile(roles?: AppRole[]) {
 
   return { supabase, user, profile };
 }
-

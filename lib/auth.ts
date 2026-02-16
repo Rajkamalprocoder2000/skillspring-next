@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { User } from "@supabase/supabase-js";
 
 export type AppRole = "admin" | "instructor" | "student";
 
@@ -11,13 +12,10 @@ export type Profile = {
   is_active: boolean;
 };
 
-export async function getCurrentProfile(supabaseArg?: Awaited<ReturnType<typeof createServerSupabaseClient>>): Promise<Profile | null> {
-  const supabase = supabaseArg ?? (await createServerSupabaseClient());
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
+async function getOrCreateProfile(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  user: User,
+): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
@@ -55,9 +53,35 @@ export async function getCurrentProfile(supabaseArg?: Awaited<ReturnType<typeof 
   return (inserted as Profile | null) ?? null;
 }
 
+export async function getCurrentProfile(
+  supabaseArg?: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  userArg?: User,
+): Promise<Profile | null> {
+  const supabase = supabaseArg ?? (await createServerSupabaseClient());
+  let user = userArg;
+
+  if (!user) {
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser ?? undefined;
+  }
+
+  if (!user) return null;
+  return getOrCreateProfile(supabase, user);
+}
+
 export async function requireProfile(roles?: AppRole[]) {
   const supabase = await createServerSupabaseClient();
-  const profile = await getCurrentProfile(supabase);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  const profile = await getCurrentProfile(supabase, user);
 
   if (!profile) {
     redirect("/auth/login");
