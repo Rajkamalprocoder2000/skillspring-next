@@ -131,22 +131,9 @@ export async function signupAction(_: AuthState, formData: FormData): Promise<Au
     return { error: error.message };
   }
 
-  if (data.user?.id) {
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: data.user.id,
-      email,
-      full_name: fullName,
-      role,
-      is_active: true,
-    });
-
-    if (profileError) {
-      if (isProfilesTableMissing(profileError.message)) {
-        return { error: setupHelp };
-      }
-      return { error: profileError.message };
-    }
-  }
+  // Do not write to profiles directly during signup.
+  // Supabase may not provide an authenticated session yet (email confirm flow),
+  // which can trigger RLS violations. Profiles are created by DB trigger.
 
   if (!data.session) {
     return {
