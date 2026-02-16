@@ -61,7 +61,7 @@ if (!$activeLesson) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_lesson'])) {
-    $mark = db()->prepare('INSERT IGNORE INTO lesson_progress (student_id, lesson_id, is_completed) VALUES (?, ?, 1)');
+    $mark = db()->prepare('INSERT INTO lesson_progress (student_id, lesson_id, is_completed) VALUES (?, ?, 1) ON CONFLICT (student_id, lesson_id) DO NOTHING');
     $mark->execute([(int) $user['id'], $lessonId]);
     flash_set('success', 'Lesson marked as completed.');
     redirect('/student/player.php?course_id=' . $courseId . '&lesson_id=' . $lessonId);

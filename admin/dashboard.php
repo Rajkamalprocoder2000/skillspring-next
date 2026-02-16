@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           WHERE id = ? AND status IN ('pending', 'rejected')
         ");
         $stmt->execute([$courseId]);
-        $log = db()->prepare('INSERT INTO course_approval_logs (course_id, admin_id, action, note) VALUES (?, ?, "approved", ?)');
+        $log = db()->prepare("INSERT INTO course_approval_logs (course_id, admin_id, action, note) VALUES (?, ?, 'approved', ?)");
         $log->execute([$courseId, (int) $admin['id'], trim($_POST['note'] ?? '')]);
         flash_set('success', 'Course approved.');
         redirect('/admin/dashboard.php');
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $reason = trim($_POST['reason'] ?? 'Rejected by admin.');
         $stmt = db()->prepare("UPDATE courses SET status = 'rejected', rejection_reason = ? WHERE id = ?");
         $stmt->execute([$reason, $courseId]);
-        $log = db()->prepare('INSERT INTO course_approval_logs (course_id, admin_id, action, note) VALUES (?, ?, "rejected", ?)');
+        $log = db()->prepare("INSERT INTO course_approval_logs (course_id, admin_id, action, note) VALUES (?, ?, 'rejected', ?)");
         $log->execute([$courseId, (int) $admin['id'], $reason]);
         flash_set('success', 'Course rejected.');
         redirect('/admin/dashboard.php');
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'add_category') {
         $name = trim($_POST['name'] ?? '');
         if ($name !== '') {
-            $stmt = db()->prepare('INSERT IGNORE INTO categories (name) VALUES (?)');
+            $stmt = db()->prepare('INSERT INTO categories (name) VALUES (?) ON CONFLICT (name) DO NOTHING');
             $stmt->execute([$name]);
             flash_set('success', 'Category saved.');
         }
@@ -144,4 +144,3 @@ require __DIR__ . '/../templates/header.php';
   <p class="muted">Current: <?= e(implode(', ', array_column($categories, 'name'))) ?></p>
 </section>
 <?php require __DIR__ . '/../templates/footer.php'; ?>
-

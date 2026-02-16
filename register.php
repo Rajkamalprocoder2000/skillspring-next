@@ -29,9 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Email already exists.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $insert = db()->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)');
+            $insert = db()->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?) RETURNING id');
             $insert->execute([$name, $email, $hash, $role]);
-            login_user((int) db()->lastInsertId());
+            login_user((int) $insert->fetchColumn());
             redirect('/index.php');
         }
     }
@@ -60,4 +60,5 @@ require __DIR__ . '/templates/header.php';
   <button class="btn" type="submit">Sign Up</button>
 </form>
 <?php require __DIR__ . '/templates/footer.php'; ?>
+
 

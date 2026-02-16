@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 declare(strict_types=1);
 
 session_start();
@@ -6,11 +6,12 @@ session_start();
 const APP_NAME = 'SkillSpring';
 const DEFAULT_APP_BASE_PATH = '';
 
-const DB_HOST = '127.0.0.1';
-const DB_NAME = 'skillspring';
-const DB_USER = 'root';
+const DB_HOST = '';
+const DB_PORT = '5432';
+const DB_NAME = 'postgres';
+const DB_USER = '';
 const DB_PASS = '';
-const DB_CHARSET = 'utf8mb4';
+const DB_SSLMODE = 'require';
 
 function env_or_default(string $key, string $default): string
 {

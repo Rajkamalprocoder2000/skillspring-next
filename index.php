@@ -10,7 +10,7 @@ $stmt = db()->query("
   JOIN users u ON u.id = c.instructor_id
   LEFT JOIN reviews r ON r.course_id = c.id
   WHERE c.status = 'approved'
-  GROUP BY c.id
+  GROUP BY c.id, u.name
   ORDER BY reviews_count DESC, c.created_at DESC
   LIMIT 6
 ");

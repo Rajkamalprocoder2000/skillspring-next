@@ -21,7 +21,7 @@ $sql = "
 $params = [];
 
 if ($q !== '') {
-    $sql .= " AND (c.title LIKE :q OR c.description LIKE :q)";
+    $sql .= " AND (c.title ILIKE :q OR c.description ILIKE :q)";
     $params[':q'] = '%' . $q . '%';
 }
 if ($categoryId > 0) {
@@ -33,7 +33,7 @@ if (in_array($level, ['beginner', 'intermediate', 'advanced'], true)) {
     $params[':level'] = $level;
 }
 
-$sql .= " GROUP BY c.id ORDER BY c.created_at DESC";
+$sql .= " GROUP BY c.id, cat.name, u.name ORDER BY c.created_at DESC";
 $stmt = db()->prepare($sql);
 $stmt->execute($params);
 $courses = $stmt->fetchAll();

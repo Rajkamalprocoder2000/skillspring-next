@@ -40,7 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = db()->prepare("
           INSERT INTO reviews (student_id, course_id, rating, comment)
           VALUES (?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE rating = VALUES(rating), comment = VALUES(comment), updated_at = CURRENT_TIMESTAMP
+          ON CONFLICT (student_id, course_id)
+          DO UPDATE SET rating = EXCLUDED.rating, comment = EXCLUDED.comment, updated_at = NOW()
         ");
         $stmt->execute([(int) $user['id'], $courseId, $rating, $comment]);
         flash_set('success', 'Review saved.');

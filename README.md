@@ -106,11 +106,12 @@ git push -u origin main
 
 Set these in Vercel Project Settings -> Environment Variables:
 
-- `DB_HOST`
-- `DB_NAME`
+- `DB_HOST` (or use `DATABASE_URL` instead)
+- `DB_PORT` (default `5432`)
+- `DB_NAME` (default `postgres`)
 - `DB_USER`
 - `DB_PASS`
-- `DB_CHARSET` (optional, default `utf8mb4`)
+- `DB_SSLMODE` (default `require`)
 - `APP_BASE_PATH` (set empty for production)
 
 ### 4. Notes
@@ -118,3 +119,11 @@ Set these in Vercel Project Settings -> Environment Variables:
 - `/` routes to `index.php` via `vercel.json`.
 - Keep `.php` URLs for internal pages (`/login.php`, `/courses.php`, etc.).
 - Static assets are served from `assets/`.
+
+## PHP + Supabase (Postgres)
+
+For the PHP app, run this SQL in Supabase SQL editor:
+
+- `supabase/schema_php.sql`
+
+This is separate from `supabase/schema.sql` used by the Next.js app and Supabase Auth flow.

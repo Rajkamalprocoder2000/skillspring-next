@@ -25,9 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = db()->prepare("
               INSERT INTO courses (instructor_id, category_id, title, slug, description, price, level, status)
               VALUES (?, ?, ?, ?, ?, ?, ?, 'draft')
+              RETURNING id
             ");
             $stmt->execute([(int) $user['id'], $categoryId ?: null, $title, $slug, $description, $price, $level]);
-            $newId = (int) db()->lastInsertId();
+            $newId = (int) $stmt->fetchColumn();
             flash_set('success', 'Course created as draft.');
             redirect('/instructor/course_builder.php?course_id=' . $newId);
         }
@@ -244,4 +245,3 @@ require __DIR__ . '/../templates/header.php';
   </section>
 <?php endif; ?>
 <?php require __DIR__ . '/../templates/footer.php'; ?>
-
