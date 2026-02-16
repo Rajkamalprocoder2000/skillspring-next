@@ -1,6 +1,9 @@
 -- PostgreSQL schema for the PHP app (run in Supabase SQL editor)
 -- This keeps the current PHP auth/session flow and table names.
 
+create schema if not exists phpapp;
+set search_path to phpapp, public;
+
 create table if not exists users (
   id integer generated always as identity primary key,
   name varchar(120) not null,
@@ -107,7 +110,7 @@ create table if not exists course_approval_logs (
   created_at timestamptz not null default now()
 );
 
-create or replace function set_updated_at()
+create or replace function phpapp.set_updated_at()
 returns trigger
 language plpgsql
 as $$
@@ -121,13 +124,13 @@ drop trigger if exists trg_courses_updated_at on courses;
 create trigger trg_courses_updated_at
 before update on courses
 for each row
-execute function set_updated_at();
+execute function phpapp.set_updated_at();
 
 drop trigger if exists trg_reviews_updated_at on reviews;
 create trigger trg_reviews_updated_at
 before update on reviews
 for each row
-execute function set_updated_at();
+execute function phpapp.set_updated_at();
 
 insert into categories (name)
 values ('Web Development'), ('Data Science'), ('Design'), ('Marketing')

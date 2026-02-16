@@ -102,5 +102,7 @@ function db(): PDO
         }
     }
 
+    $pdo->exec('SET search_path TO phpapp,public');
+
     return $pdo;
 }
