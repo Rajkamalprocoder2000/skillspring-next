@@ -3,8 +3,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const protectedPrefixes = ["/student", "/instructor", "/admin"];
 
-export function proxy(request: NextRequest) {
-  const response = updateSession(request);
+export async function proxy(request: NextRequest) {
+  const response = await updateSession(request);
   const pathname = request.nextUrl.pathname;
 
   const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
@@ -25,4 +25,3 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
-
