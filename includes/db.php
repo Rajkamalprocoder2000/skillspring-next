@@ -33,12 +33,52 @@ function db(): PDO
 
     $sslmode = env_or_default('DB_SSLMODE', DB_SSLMODE);
 
-    $dsn = "pgsql:host={$host};port={$port};dbname={$name};sslmode={$sslmode}";
-    $pdo = new PDO($dsn, $user, $pass, [
+    $options = [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
+    ];
+
+    $dsn = "pgsql:host={$host};port={$port};dbname={$name};sslmode={$sslmode}";
+
+    try {
+        $pdo = new PDO($dsn, $user, $pass, $options);
+    } catch (PDOException $e) {
+        $isSupabaseDirectHost = str_ends_with($host, '.supabase.co') && str_starts_with($host, 'db.');
+        $isNetworkFamilyError = stripos($e->getMessage(), 'Cannot assign requested address') !== false;
+
+        if (!$isSupabaseDirectHost || !$isNetworkFamilyError) {
+            throw $e;
+        }
+
+        // Supabase direct hosts can be IPv6-only. Retry using IPv4 pooler endpoints.
+        $regions = [
+            'us-east-1',
+            'us-west-1',
+            'us-west-2',
+            'eu-west-1',
+            'eu-central-1',
+            'ap-south-1',
+            'ap-southeast-1',
+            'ap-northeast-1',
+        ];
+
+        $lastException = $e;
+        foreach ($regions as $region) {
+            $poolerHost = "aws-0-{$region}.pooler.supabase.com";
+            $poolerDsn = "pgsql:host={$poolerHost};port=6543;dbname={$name};sslmode={$sslmode}";
+            try {
+                $pdo = new PDO($poolerDsn, $user, $pass, $options);
+                break;
+            } catch (PDOException $poolerException) {
+                $lastException = $poolerException;
+            }
+        }
+
+        if (!$pdo instanceof PDO) {
+            throw $lastException;
+        }
+    }
 
     return $pdo;
 }
