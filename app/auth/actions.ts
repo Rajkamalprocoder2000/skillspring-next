@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type AuthState = {
   error?: string;
+  success?: string;
 };
 
 function normalizeRole(value: string): "student" | "instructor" {
@@ -21,7 +22,14 @@ export async function loginAction(_: AuthState, formData: FormData): Promise<Aut
 
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.message.toLowerCase().includes("invalid login credentials")) {
+      return {
+        error: "Invalid credentials, or your email is not confirmed yet. Please verify your inbox and try again.",
+      };
+    }
+    return { error: error.message };
+  }
 
   const {
     data: { user },
@@ -69,6 +77,7 @@ export async function signupAction(_: AuthState, formData: FormData): Promise<Au
   if (data.user?.id) {
     const { error: profileError } = await supabase.from("profiles").upsert({
       id: data.user.id,
+      email,
       full_name: fullName,
       role,
     });
@@ -76,5 +85,12 @@ export async function signupAction(_: AuthState, formData: FormData): Promise<Au
     if (profileError) return { error: profileError.message };
   }
 
+  if (!data.session) {
+    return {
+      success: "Signup successful. Please check your email and confirm your account before logging in.",
+    };
+  }
+
+  if (role === "instructor") redirect("/instructor/dashboard");
   redirect("/student/dashboard");
 }

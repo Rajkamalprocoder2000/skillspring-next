@@ -14,6 +14,7 @@ export default function SignupPage() {
       <h1>Create Account</h1>
       <p className="muted">Join as student or instructor.</p>
       {state.error && <p style={{ color: "#b91c1c" }}>{state.error}</p>}
+      {state.success && <p style={{ color: "#166534" }}>{state.success}</p>}
       <form action={formAction}>
         <label>Full Name</label>
         <input name="full_name" required />
