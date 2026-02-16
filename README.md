@@ -1,4 +1,4 @@
-# SkillSpring (Next.js + Supabase)
+﻿# SkillSpring (Next.js + Supabase)
 
 Udemy-style learning platform with role-based portals:
 - Admin
@@ -81,3 +81,40 @@ Use the same passwords entered at signup.
 
 - Enrollment currently uses mock payment logic in app actions.
 - Stripe/Razorpay can be added by replacing enroll action with checkout + webhook flow.
+
+## Deploy PHP App (GitHub + Vercel)
+
+This repository contains both Next.js and PHP. For PHP deployment on Vercel, this repo uses `vercel.json` with `vercel-php` runtime.
+
+### 1. GitHub
+
+```bash
+git add .
+git commit -m "chore: prepare PHP deployment for GitHub and Vercel"
+git remote add origin https://github.com/<your-username>/<your-repo>.git
+git branch -M main
+git push -u origin main
+```
+
+### 2. Vercel Project
+
+- Import the same GitHub repository in Vercel.
+- Framework Preset: `Other`
+- Root Directory: `./`
+
+### 3. Vercel Environment Variables
+
+Set these in Vercel Project Settings -> Environment Variables:
+
+- `DB_HOST`
+- `DB_NAME`
+- `DB_USER`
+- `DB_PASS`
+- `DB_CHARSET` (optional, default `utf8mb4`)
+- `APP_BASE_PATH` (set empty for production)
+
+### 4. Notes
+
+- `/` routes to `index.php` via `vercel.json`.
+- Keep `.php` URLs for internal pages (`/login.php`, `/courses.php`, etc.).
+- Static assets are served from `assets/`.

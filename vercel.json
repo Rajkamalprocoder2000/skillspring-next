@@ -1,0 +1,13 @@
+﻿{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "builds": [
+    { "src": "*.php", "use": "vercel-php@0.7.4" },
+    { "src": "admin/*.php", "use": "vercel-php@0.7.4" },
+    { "src": "student/*.php", "use": "vercel-php@0.7.4" },
+    { "src": "instructor/*.php", "use": "vercel-php@0.7.4" }
+  ],
+  "routes": [
+    { "src": "^/$", "dest": "/index.php" }
+  ]
+}

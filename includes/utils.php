@@ -8,7 +8,7 @@ function e(string $value): string
 
 function redirect(string $path): void
 {
-    header('Location: ' . $path);
+    header('Location: ' . app_url($path));
     exit;
 }
 
@@ -26,4 +26,3 @@ function flash_get(string $key): ?string
     unset($_SESSION['flash'][$key]);
     return $value;
 }
-

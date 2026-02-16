@@ -24,7 +24,7 @@ function require_login(): array
 {
     $user = current_user();
     if (!$user) {
-        header('Location: /login.php');
+        header('Location: ' . app_url('/login.php'));
         exit;
     }
     return $user;
@@ -51,4 +51,3 @@ function logout_user(): void
     session_unset();
     session_destroy();
 }
-

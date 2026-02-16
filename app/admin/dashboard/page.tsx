@@ -19,6 +19,12 @@ export default async function AdminDashboardPage() {
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
+  const { data: allCourses } = await supabase
+    .from("courses")
+    .select("id, title, instructor_name, price, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
   const { data: userList } = await supabase
     .from("profiles")
     .select("id, full_name, role, is_active, email")
@@ -171,6 +177,51 @@ export default async function AdminDashboardPage() {
                       {user.is_active ? "Disable" : "Enable"}
                     </button>
                   </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section className="card" style={{ marginTop: 14 }}>
+        <h2>All Courses</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Instructor</th>
+              <th>Status</th>
+              <th>Price</th>
+              <th>Created</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(allCourses ?? []).map((course) => (
+              <tr key={course.id}>
+                <td>{course.title}</td>
+                <td>{course.instructor_name}</td>
+                <td>{course.status}</td>
+                <td>${Number(course.price ?? 0).toFixed(2)}</td>
+                <td>{new Date(course.created_at).toLocaleDateString()}</td>
+                <td>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <form action={approveAction}>
+                      <input type="hidden" name="course_id" value={course.id} />
+                      <input type="hidden" name="note" value="Approved by admin from all courses list" />
+                      <button className="btn success" type="submit">
+                        Approve
+                      </button>
+                    </form>
+                    <form action={rejectAction}>
+                      <input type="hidden" name="course_id" value={course.id} />
+                      <input type="hidden" name="reason" value="Rejected by admin from all courses list" />
+                      <button className="btn danger" type="submit">
+                        Reject
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
