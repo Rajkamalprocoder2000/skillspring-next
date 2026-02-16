@@ -31,6 +31,9 @@ export async function loginAction(_: AuthState, formData: FormData): Promise<Aut
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
+    if (error.message.toLowerCase().includes("email rate limit exceeded")) {
+      return { error: "Too many attempts. Please wait a minute and try again." };
+    }
     if (error.message.toLowerCase().includes("invalid login credentials")) {
       return {
         error: "Invalid credentials, or your email is not confirmed yet. Please verify your inbox and try again.",
@@ -49,7 +52,7 @@ export async function loginAction(_: AuthState, formData: FormData): Promise<Aut
 
   let { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_active")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -67,8 +70,9 @@ export async function loginAction(_: AuthState, formData: FormData): Promise<Aut
         email: user.email ?? "",
         full_name: (user.user_metadata?.full_name as string | undefined) ?? null,
         role: fallbackRole,
+        is_active: true,
       })
-      .select("role")
+      .select("role, is_active")
       .single();
 
     if (insertError) {
@@ -83,6 +87,12 @@ export async function loginAction(_: AuthState, formData: FormData): Promise<Aut
   }
 
   const role = profile?.role as string | undefined;
+  const isActive = Boolean(profile?.is_active ?? true);
+
+  if (!isActive) {
+    await supabase.auth.signOut();
+    return { error: "Your account is disabled. Contact admin." };
+  }
 
   if (role === "admin") redirect("/admin/dashboard");
   if (role === "instructor") redirect("/instructor/dashboard");
@@ -114,7 +124,12 @@ export async function signupAction(_: AuthState, formData: FormData): Promise<Au
     },
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.message.toLowerCase().includes("email rate limit exceeded")) {
+      return { error: "Too many signup attempts. Please wait a minute and try again." };
+    }
+    return { error: error.message };
+  }
 
   if (data.user?.id) {
     const { error: profileError } = await supabase.from("profiles").upsert({
@@ -122,6 +137,7 @@ export async function signupAction(_: AuthState, formData: FormData): Promise<Au
       email,
       full_name: fullName,
       role,
+      is_active: true,
     });
 
     if (profileError) {

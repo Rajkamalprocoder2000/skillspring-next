@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireActionProfile } from "@/lib/server-auth";
 
 export default async function AdminDashboardPage() {
   const { supabase, profile } = await requireProfile(["admin"]);
@@ -31,11 +31,8 @@ export default async function AdminDashboardPage() {
     "use server";
     const courseId = Number(formData.get("course_id") ?? 0);
     const note = String(formData.get("note") ?? "").trim();
-    const server = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await server.auth.getUser();
-    if (!user || !courseId) redirect("/auth/login");
+    if (!courseId) redirect("/admin/dashboard");
+    const { supabase: server, user } = await requireActionProfile(["admin"]);
 
     await server
       .from("courses")
@@ -57,11 +54,8 @@ export default async function AdminDashboardPage() {
     "use server";
     const courseId = Number(formData.get("course_id") ?? 0);
     const reason = String(formData.get("reason") ?? "").trim() || "Rejected by admin";
-    const server = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await server.auth.getUser();
-    if (!user || !courseId) redirect("/auth/login");
+    if (!courseId) redirect("/admin/dashboard");
+    const { supabase: server, user } = await requireActionProfile(["admin"]);
 
     await server.from("courses").update({ status: "rejected", rejection_reason: reason }).eq("id", courseId);
 
@@ -81,7 +75,10 @@ export default async function AdminDashboardPage() {
     const userId = String(formData.get("user_id") ?? "");
     const isActive = String(formData.get("is_active") ?? "") === "true";
     if (!userId) return;
-    const server = await createServerSupabaseClient();
+    const { supabase: server, user } = await requireActionProfile(["admin"]);
+    if (userId === user.id) {
+      redirect("/admin/dashboard");
+    }
     await server.from("profiles").update({ is_active: isActive }).eq("id", userId);
     revalidatePath("/admin/dashboard");
     redirect("/admin/dashboard");
@@ -91,7 +88,7 @@ export default async function AdminDashboardPage() {
     "use server";
     const name = String(formData.get("name") ?? "").trim();
     if (!name) return;
-    const server = await createServerSupabaseClient();
+    const { supabase: server } = await requireActionProfile(["admin"]);
     await server.from("categories").upsert({ name }, { onConflict: "name" });
     revalidatePath("/admin/dashboard");
     redirect("/admin/dashboard");
@@ -199,4 +196,3 @@ export default async function AdminDashboardPage() {
     </div>
   );
 }
-

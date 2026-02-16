@@ -38,6 +38,9 @@ export default async function HomePage() {
         <Link className="btn" href="/courses">
           Explore Marketplace
         </Link>
+        <Link className="btn secondary" href="/setup" style={{ marginLeft: 8 }}>
+          Run Setup Check
+        </Link>
       </section>
 
       <h2 style={{ marginTop: 22 }}>Trending Courses</h2>

@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireActionProfile } from "@/lib/server-auth";
 
 type Params = Promise<{ courseId: string }>;
 type SearchParams = Promise<{ lesson?: string }>;
@@ -59,12 +59,30 @@ export default async function CoursePlayerPage({
     "use server";
     const lessonId = Number(formData.get("lesson_id") ?? 0);
     const id = Number(formData.get("course_id") ?? 0);
-    const server = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await server.auth.getUser();
+    const { supabase: server, user } = await requireActionProfile(["student"]);
+    if (!lessonId || !id) redirect("/student/dashboard");
 
-    if (!user || !lessonId || !id) redirect("/auth/login");
+    const { data: allowedEnrollment } = await server
+      .from("enrollments")
+      .select("id")
+      .eq("student_id", user.id)
+      .eq("course_id", id)
+      .maybeSingle();
+
+    if (!allowedEnrollment) {
+      redirect("/student/dashboard");
+    }
+
+    const { data: allowedLesson } = await server
+      .from("course_lessons_view")
+      .select("lesson_id")
+      .eq("course_id", id)
+      .eq("lesson_id", lessonId)
+      .maybeSingle();
+
+    if (!allowedLesson) {
+      redirect(`/student/player/${id}`);
+    }
 
     await server.from("lesson_progress").upsert(
       {
@@ -119,4 +137,3 @@ export default async function CoursePlayerPage({
     </div>
   );
 }
-

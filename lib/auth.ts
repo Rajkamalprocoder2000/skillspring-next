@@ -8,6 +8,7 @@ export type Profile = {
   email?: string | null;
   full_name: string | null;
   role: AppRole;
+  is_active: boolean;
 };
 
 export async function getCurrentProfile(supabaseArg?: Awaited<ReturnType<typeof createServerSupabaseClient>>): Promise<Profile | null> {
@@ -20,7 +21,7 @@ export async function getCurrentProfile(supabaseArg?: Awaited<ReturnType<typeof 
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role")
+    .select("id, email, full_name, role, is_active")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -42,8 +43,9 @@ export async function getCurrentProfile(supabaseArg?: Awaited<ReturnType<typeof 
       email: user.email ?? "",
       full_name: (user.user_metadata?.full_name as string | undefined) ?? null,
       role,
+      is_active: true,
     })
-    .select("id, email, full_name, role")
+    .select("id, email, full_name, role, is_active")
     .single();
 
   if (insertError) {
@@ -63,6 +65,11 @@ export async function requireProfile(roles?: AppRole[]) {
 
   if (roles && !roles.includes(profile.role)) {
     redirect("/");
+  }
+
+  if (!profile.is_active) {
+    await supabase.auth.signOut();
+    redirect("/auth/login");
   }
 
   return { supabase, profile };

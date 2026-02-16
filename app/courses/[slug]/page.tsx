@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
+import { requireActionProfile } from "@/lib/server-auth";
 
 type Params = Promise<{ slug: string }>;
 
@@ -49,15 +50,7 @@ export default async function CourseDetailsPage({ params }: { params: Params }) 
 
   async function enrollAction() {
     "use server";
-    const server = await createServerSupabaseClient();
-    const {
-      data: { user: currentUser },
-    } = await server.auth.getUser();
-
-    if (!currentUser) redirect("/auth/login");
-
-    const { data: currentProfile } = await server.from("profiles").select("role").eq("id", currentUser.id).single();
-    if (currentProfile?.role !== "student") redirect("/courses");
+    const { supabase: server, user: currentUser } = await requireActionProfile(["student"]);
 
     const { data: existing } = await server
       .from("enrollments")
@@ -85,11 +78,7 @@ export default async function CourseDetailsPage({ params }: { params: Params }) 
     const rating = Number(formData.get("rating") ?? 0);
     const comment = String(formData.get("comment") ?? "").trim();
 
-    const server = await createServerSupabaseClient();
-    const {
-      data: { user: currentUser },
-    } = await server.auth.getUser();
-    if (!currentUser) redirect("/auth/login");
+    const { supabase: server, user: currentUser } = await requireActionProfile(["student"]);
 
     const { data: allowed } = await server
       .from("enrollments")

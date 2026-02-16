@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { requireActionProfile } from "@/lib/server-auth";
 
 type SearchParams = Promise<{ course?: string }>;
 
@@ -38,11 +38,7 @@ export default async function CourseBuilderPage({ searchParams }: { searchParams
 
   async function createCourseAction(formData: FormData) {
     "use server";
-    const server = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await server.auth.getUser();
-    if (!user) redirect("/auth/login");
+    const { supabase: server, user } = await requireActionProfile(["instructor"]);
 
     const title = String(formData.get("title") ?? "").trim();
     const shortDescription = String(formData.get("short_description") ?? "").trim();
@@ -82,7 +78,14 @@ export default async function CourseBuilderPage({ searchParams }: { searchParams
     const title = String(formData.get("title") ?? "").trim();
     const sortOrder = Number(formData.get("sort_order") ?? 0);
     if (!courseId || !title) return;
-    const server = await createServerSupabaseClient();
+    const { supabase: server, user } = await requireActionProfile(["instructor"]);
+    const { data: course } = await server
+      .from("courses")
+      .select("id")
+      .eq("id", courseId)
+      .eq("instructor_id", user.id)
+      .maybeSingle();
+    if (!course) redirect("/instructor/builder");
     await server.from("course_sections").insert({ course_id: courseId, title, sort_order: sortOrder });
     revalidatePath(`/instructor/builder?course=${courseId}`);
     redirect(`/instructor/builder?course=${courseId}`);
@@ -102,7 +105,17 @@ export default async function CourseBuilderPage({ searchParams }: { searchParams
 
     if (!courseId || !sectionId || !title) return;
 
-    const server = await createServerSupabaseClient();
+    const { supabase: server, user } = await requireActionProfile(["instructor"]);
+    const { data: section } = await server
+      .from("course_sections")
+      .select("id, course_id, courses!inner(instructor_id)")
+      .eq("id", sectionId)
+      .eq("course_id", courseId)
+      .eq("courses.instructor_id", user.id)
+      .maybeSingle();
+
+    if (!section) redirect("/instructor/builder");
+
     await server.from("course_lessons").insert({
       section_id: sectionId,
       title,
@@ -121,8 +134,12 @@ export default async function CourseBuilderPage({ searchParams }: { searchParams
     "use server";
     const courseId = Number(formData.get("course_id") ?? 0);
     if (!courseId) return;
-    const server = await createServerSupabaseClient();
-    await server.from("courses").update({ status: "pending", rejection_reason: null }).eq("id", courseId);
+    const { supabase: server, user } = await requireActionProfile(["instructor"]);
+    await server
+      .from("courses")
+      .update({ status: "pending", rejection_reason: null })
+      .eq("id", courseId)
+      .eq("instructor_id", user.id);
     revalidatePath(`/instructor/builder?course=${courseId}`);
     redirect(`/instructor/builder?course=${courseId}`);
   }
@@ -273,4 +290,3 @@ export default async function CourseBuilderPage({ searchParams }: { searchParams
     </div>
   );
 }
-
