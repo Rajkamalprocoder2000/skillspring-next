@@ -2,15 +2,31 @@ import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export default async function HomePage() {
-  const supabase = await createServerSupabaseClient();
+  let courses: Array<{
+    id: number;
+    slug: string;
+    title: string;
+    short_description: string | null;
+    price: number | null;
+    level: string;
+    review_avg: number | null;
+    review_count: number | null;
+  }> = [];
+  let setupError = false;
 
-  const { data: courses } = await supabase
-    .from("courses")
-    .select("id, slug, title, short_description, price, level, review_avg, review_count")
-    .eq("status", "approved")
-    .order("review_count", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(6);
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase
+      .from("courses")
+      .select("id, slug, title, short_description, price, level, review_avg, review_count")
+      .eq("status", "approved")
+      .order("review_count", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(6);
+    courses = data ?? [];
+  } catch {
+    setupError = true;
+  }
 
   return (
     <div style={{ paddingBottom: 24 }}>
@@ -25,8 +41,15 @@ export default async function HomePage() {
       </section>
 
       <h2 style={{ marginTop: 22 }}>Trending Courses</h2>
+      {setupError && (
+        <div className="card" style={{ marginBottom: 12 }}>
+          <p className="muted">
+            Setup pending: configure Supabase env vars and run `supabase/schema.sql` to enable full functionality.
+          </p>
+        </div>
+      )}
       <div className="grid">
-        {(courses ?? []).map((course) => (
+        {courses.map((course) => (
           <article className="card" key={course.id}>
             <span className="pill">{course.level}</span>
             <h3>{course.title}</h3>

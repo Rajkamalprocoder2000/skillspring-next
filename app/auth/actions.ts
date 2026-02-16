@@ -12,6 +12,14 @@ function normalizeRole(value: string): "student" | "instructor" {
   return value === "instructor" ? "instructor" : "student";
 }
 
+function isProfilesTableMissing(message: string): boolean {
+  const lower = message.toLowerCase();
+  return lower.includes("public.profiles") || lower.includes("relation \"profiles\" does not exist");
+}
+
+const setupHelp =
+  "Database setup is incomplete. Run supabase/schema.sql in Supabase SQL Editor, then retry.";
+
 export async function loginAction(_: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -39,7 +47,41 @@ export async function loginAction(_: AuthState, formData: FormData): Promise<Aut
     return { error: "Unable to load your account." };
   }
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  let { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError && isProfilesTableMissing(profileError.message)) {
+    return { error: setupHelp };
+  }
+
+  if (!profile) {
+    const rawRole = user.user_metadata?.role;
+    const fallbackRole = rawRole === "admin" || rawRole === "instructor" ? rawRole : "student";
+    const { data: inserted, error: insertError } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        email: user.email ?? "",
+        full_name: (user.user_metadata?.full_name as string | undefined) ?? null,
+        role: fallbackRole,
+      })
+      .select("role")
+      .single();
+
+    if (insertError) {
+      if (isProfilesTableMissing(insertError.message)) {
+        return { error: setupHelp };
+      }
+      return { error: insertError.message };
+    }
+
+    profile = inserted;
+    profileError = null;
+  }
+
   const role = profile?.role as string | undefined;
 
   if (role === "admin") redirect("/admin/dashboard");
@@ -82,7 +124,12 @@ export async function signupAction(_: AuthState, formData: FormData): Promise<Au
       role,
     });
 
-    if (profileError) return { error: profileError.message };
+    if (profileError) {
+      if (isProfilesTableMissing(profileError.message)) {
+        return { error: setupHelp };
+      }
+      return { error: profileError.message };
+    }
   }
 
   if (!data.session) {

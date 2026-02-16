@@ -14,11 +14,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const profile = user ? await getCurrentProfile(supabase) : null;
+  let user: { id: string } | null = null;
+  let profile: Awaited<ReturnType<typeof getCurrentProfile>> = null;
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+    user = currentUser ? { id: currentUser.id } : null;
+    profile = currentUser ? await getCurrentProfile(supabase) : null;
+  } catch {
+    user = null;
+    profile = null;
+  }
 
   return (
     <html lang="en">
