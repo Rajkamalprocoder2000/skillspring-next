@@ -67,6 +67,19 @@ a {
   color: #fff;
 }
 
+.menu-logout {
+  border: 0;
+  background: transparent;
+  color: #e2e8f0;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.menu-logout:hover {
+  color: #fff;
+}
+
 .hero {
   background: radial-gradient(circle at 20% 20%, #164e63, #0f172a);
   color: #fff;

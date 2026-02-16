@@ -44,7 +44,13 @@ export default async function RootLayout({
               {profile?.role === "student" && <Link href="/student/dashboard">Student</Link>}
               {profile?.role === "instructor" && <Link href="/instructor/dashboard">Instructor</Link>}
               {profile?.role === "admin" && <Link href="/admin/dashboard">Admin</Link>}
-              {user && <Link href="/logout">Logout</Link>}
+              {user && (
+                <form action="/logout" method="post" style={{ margin: 0 }}>
+                  <button type="submit" className="menu-logout">
+                    Logout
+                  </button>
+                </form>
+              )}
             </nav>
           </div>
         </header>
