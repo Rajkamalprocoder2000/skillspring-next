@@ -1,0 +1,1 @@
+SkillSpring scaffold placeholder
